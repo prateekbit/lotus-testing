@@ -146,7 +146,7 @@
                         </td>
 
                         <td class="cart-item__details" role="cell" headers="CartDrawer-ColumnProduct">
-                      <span>{{ item.product.id }}-{{ item.variant.id }}</span>
+                     {% comment %} <span>{{ item.product.id }}-{{ item.variant.id }}</span> {% endcomment %}
                           {%- if settings.show_vendor -%}
                             <p class="caption-with-letter-spacing light">{{ item.product.vendor }}</p>
                           {%- endif -%}
