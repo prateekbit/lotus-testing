@@ -1,3 +1,591 @@
+<style>
+  button.redeemsubmitbtn[disabled] {
+    cursor: not-allowed;
+  }
+  </style>
+<div class="container-order">
+   <div class="sidebar">
+    <h3>Profile</h3>
+    <ul>
+      {% for block in section.blocks %}
+        <li class="block_link"><span><img src="{{ block.settings.icon_url | img_url:'master' }}" /><a href="{{ block.settings.link }}">{{ block.settings.title }}</a></span><img class="arp" src="{{ section.settings.arp | img_url:"master" }}" /></li>
+      {% endfor %}  
+  
+      <li class="block_link">
+            <a href="{{ routes.account_logout_url }}" class="link-bar__link link--animated text--subdued" data-no-instant>{{ 'customer.logout.title' | t }}</a>
+          </li>
+    </ul>
+  </div>
+  <div class="main-content">
+    
+     <div class="page-content page-content--fluid">
+          <!-- <div class="account__block-list">
+              <h2 class="account__block-list-h">
+                loyalty points
+              </h2>
+            <div class="loyaltypointdetailblock">
+               <p>Total Points Earned: <span id="totalpointearned"></span></p>
+              <p>Total Points Used: <span id="totalpointused"></span></p>
+              <p>Balance Left: <span id="balanceleftpoint"></span></p>
+            </div>
+             </div> -->
+
+       <div class="account__block-list">
+            <div class="loyaltypointdetailblock">
+              <p class="heading_for_redeemblocks">loyalty points</p>
+              <p>Total Points Earned: <span id="totalpointearned"></span></p>
+              <p>Total Points Used: <span id="totalpointused"></span></p>
+              <p>Balance Left: <span id="balanceleftpoint"></span></p>
+            </div>      <!-- loyaltypointdetailblock -->
+
+            <div class="redeempointsection">
+               <p class="heading_for_redeemblocks">Redeem Points</p>
+                <ul><li>Minimum points to redeem: 1</li><li>Minimum cart value to redeem: 1</li><li>Point value of 1 point = 1</li></ul>
+                <div class='redeempointinputsection'>
+                    <input id="redeempointinputtype" databal="" placeholder="Enter points need to be redeem eg. 10, 100, 1000" class="input__field input__field--text only-numeric" type="text" aria-labelledby="PolarisTextField1Label" aria-invalid="false" value="">
+                </div>
+              <div class='redeempointbuttonsection'>
+                <button type="button" class="redeemsubmitbtn sub" orderno="{{ order.order_number }}" orderemail="{{ order.customer.email }}">Redeem</button>
+              </div>
+            </div> <!-- redeempointsection -->
+         
+         <div class="redeemedcoupon_mainblock">
+           <p class="heading_for_redeemblocks">Coupons</p>           
+           <div class="redeemedcoupon_innerblock">             
+             
+             
+           </div>
+         </div> <!-- redeemedcoupon_mainblock -->
+
+         <div class="redeemedorderlist_mainblock">
+           <p class="heading_for_redeemblocks">Order list</p>           
+           <div class="redeemedorderlist_innerblock">             
+             
+             
+           </div>
+         </div> <!-- redeemedorderlist_mainblock -->
+
+         <div class="pointhistorylist_mainblock">
+           <p class="heading_for_redeemblocks">Points list</p>           
+           <div class="pointhistorylist_innerblock">             
+             
+             
+           </div>
+         </div> <!-- pointhistorylist_mainblock -->
+         
+       </div> 
+       
+          </div>
+        
+  </div> <!-- main-content -->
+</div>
+
+<script>
+  $(document).ready(function(){
+    var customerid = parseInt("{{ customer.id }}");
+    var customeremail = "{{ customer.email }}";
+    var customerdetailurl = "https://new.retafy.com/point/customer/detail?shop=lotusteststore.myshopify.com&email="+customeremail;
+    var customerdetailapis = {
+        "url": customerdetailurl,
+        "method": "GET",
+        "timeout": 0,
+      };
+      $.ajax(customerdetailapis).done(function (customerdetailsresponse) {  
+        console.log(customerdetailsresponse);
+        var customerdetailsdata = customerdetailsresponse.data;      
+       
+        var totalpointearned = Math.round(customerdetailsdata.total_points); 
+        var totalpointused = Math.round(customerdetailsdata.used_points);        
+        
+        if(totalpointearned){
+           var totalpointearnedaftercheck = totalpointearned; 
+        } else {
+          var totalpointearnedaftercheck = 0; 
+         }
+
+        if(totalpointused){
+           var totalpointusedaftercheck = totalpointused; 
+        } else {
+          var totalpointusedaftercheck = 0; 
+         }
+        var balanceleftpoint = totalpointearnedaftercheck - totalpointusedaftercheck; 
+        
+        $('#totalpointearned').text(totalpointearnedaftercheck);
+        $('#totalpointused').text(totalpointusedaftercheck);
+        $('#balanceleftpoint').text(balanceleftpoint);  
+        $('#redeempointinputtype').attr("databal",balanceleftpoint);
+      }).fail(function(msg){ console.log('consoletest');
+        console.log(msg);
+      });
+      $(".only-numeric").bind("keypress", function (e) {
+          var txt = $(this).val();
+          //console.log(txt);console.log(e);
+            var keyCode = e.which ? e.which : e.keyCode  
+            if (keyCode == 46) {       
+                if (txt.indexOf('.') === -1) {
+                  return false; //true
+                } else {
+                  return false;
+                }
+              } else {
+                if (keyCode > 31 && (keyCode < 48 || keyCode > 57)) {
+                    return false;
+                } 
+              }
+              return true;
+        });  
+    $('.redeemsubmitbtn').click(function(){
+      var redeempointvalue = parseInt($('#redeempointinputtype').val());
+      var redeemballeft = parseInt($('#redeempointinputtype').attr("databal"));
+      if(redeempointvalue <= redeemballeft) {
+        $(this).attr("disabled","disabled");
+           $('.redeempointsection').css("opacity",".5");
+          var redeempointsettings = {
+            "url": "https://new.retafy.com/point/redeem",
+            "method": "POST",
+            "timeout": 0,
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "data": JSON.stringify({
+              "id": customerid,
+              "email": customeremail,
+              "shop": "lotusteststore.myshopify.com",
+              "point_redeem": redeempointvalue,
+              //"order_value": 100000
+            }),
+          };
+                      
+          $.ajax(redeempointsettings).done(function (redeempointresponse) {
+            console.log(redeempointresponse);
+            var apisuccessmessage = redeempointresponse.message;
+            if (apisuccessmessage == "Coupon created successfully") {
+              $('#redeempointinputtype').val('');
+              alert(apisuccessmessage);console.log('datad');
+              location.reload();
+            } else {
+              alert(apisuccessmessage);console.log('data');
+            }
+          });        
+      } else {
+        alert('redeem point should be less than balance amount');
+      }      
+    });
+
+    var geturlforcoupondetails = "https://new.retafy.com/coupon/customer/single?shop=lotusteststore.myshopify.com&email="+customeremail;
+    console.log(geturlforcoupondetails);
+    var getcouponsettings = {
+        "url": geturlforcoupondetails,
+        "method": "GET",
+        "timeout": 0,
+      };
+      
+      $.ajax(getcouponsettings).done(function (getcouponresponse) {
+        var couponsdata = getcouponresponse.data;
+        var htmltextforlist = '';
+        jQuery.each( couponsdata, function(index, value) {   
+          var couponcode = value['coupon'];
+          var dbcreateon = value['created_at'];
+          var dbexpireon = value['expire_at'];
+          var codestatus = value['status'];          
+          var createon = new Date(dbcreateon * 1000).toLocaleString('en-US',{ month: 'long', day: 'numeric', year: 'numeric' }, { timeZone: 'Asia/Kolkata' });
+          var expireon = new Date(dbexpireon * 1000).toLocaleString('en-US',{ month: 'long', day: 'numeric', year: 'numeric' }, { timeZone: 'Asia/Kolkata' });
+
+          htmltextforlist += "<div class='redeemedlistcoupon_listblock'> <div class='redeemcodeblock customflexblock'>  <p>Code: <span>"+couponcode+"</span></p>   </div>  <div class='redeemcreatedonblock customflexblock'> <p>Date Issue: <span>"+createon+"</span></p></div> <div class='redeemstatuslock customflexblock'><p>Status: <span>"+codestatus+"</span></p> </div> <div class='redeemexpiredonlock customflexblock'><p>Expire Date: <span>"+expireon+"</span></p></div></div>"
+          
+          });         
+        $('.redeemedcoupon_innerblock').html(htmltextforlist);
+      });
+
+    var orderdetailurl = "https://new.retafy.com/point/customer/order/list?shop=lotusteststore.myshopify.com&email="+customeremail;
+    var orderlistsettings = {
+        "url": orderdetailurl,
+        "method": "GET",
+        "timeout": 0,
+      };
+      
+      $.ajax(orderlistsettings).done(function (orderlistresponse) {
+        console.log(orderlistresponse.data);
+        var orderdetailslist = orderlistresponse.data;
+        var htmltextfororderlist = '';
+        jQuery.each( orderdetailslist, function(index, value) {   
+          var dataorderid = value['orderId'];
+          var dataordervalue = value['amount'];
+          var dataordertype = value['paymentType'];
+          var dataorderstatus = value['orderStatus'];
+          var datapoint = value['pointsAmount'];
+          var datadbrawdate = value['createdAt'];
+          var dataorderon = new Date(datadbrawdate * 1000).toLocaleString('en-US',{ month: 'long', day: 'numeric', year: 'numeric' }, { timeZone: 'Asia/Kolkata' });
+          htmltextfororderlist += "<div class='redeemedorderlist_listblock'> <div class='redeemorderidblock customflexblock'>  <p>Order Id: <span>"+dataorderid+"</span></p>   </div>  <div class='redeemordervalueblock customflexblock'> <p>Order Value: <span>"+dataordervalue+"</span></p></div> <div class='redeemordertypelock customflexblock'><p>Order Type: <span>"+dataordertype+"</span></p> </div> <div class='redeemorderstatusblock customflexblock'><p>Order Status: <span>"+dataorderstatus+"</span></p></div><div class='redeempointsblock customflexblock'>  <p>Point: <span>"+datapoint+"</span></p>   </div>  <div class='redeemorderonblock customflexblock'> <p>Order On: <span>"+dataorderon+"</span></p></div></div>"
+          
+          });         
+        $('.redeemedorderlist_innerblock').html(htmltextfororderlist);
+        
+        
+      });
+
+    var pointhistoryurl = "https://new.retafy.com/point/customer/report?shop=lotusteststore.myshopify.com&email="+customeremail;
+    var pointhistorysettings = {
+        "url": pointhistoryurl,
+        "method": "GET",
+        "timeout": 0,
+      };
+      
+      $.ajax(pointhistorysettings).done(function (pointhistoryresponse) {
+        console.log(pointhistoryresponse.data);
+        var pointhistorylist = pointhistoryresponse.data;
+        var htmltextforpointhistory = '';
+        jQuery.each( pointhistorylist, function(index, value) {   
+          var dataorderid = value['orderName'];
+          var dataordervalue = value['orderValue'];
+          var dataordertype = value['isCoupon'];
+          var dataorderstatus = value['status'];
+          var datapoint = value['amount'];
+          var datadbrawdate = value['date'];
+          var dataorderon = new Date(datadbrawdate * 1000).toLocaleString('en-US',{ month: 'long', day: 'numeric', year: 'numeric' }, { timeZone: 'Asia/Kolkata' });
+         
+          htmltextforpointhistory += "<div class='pointhistorylist_listblock'> <div class='redeemorderidblock customflexblock'>  <p>Order no: <span>"+dataorderid+"</span></p>   </div>  <div class='redeemordervalueblock customflexblock'> <p>Order Value: <span>"+dataordervalue+"</span></p></div> <div class='redeemordertypelock customflexblock'><p>Redeem Coupon: <span>"+dataordertype+"</span></p> </div> <div class='redeemorderstatusblock customflexblock'><p>Points: <span>"+datapoint+"</span></p></div><div class='redeempointsblock customflexblock'>  <p>Status: <span>"+dataorderstatus+"</span></p>   </div>  <div class='redeemorderonblock customflexblock'> <p>Date: <span>"+dataorderon+"</span></p></div></div>"
+          
+          });         
+        $('.pointhistorylist_innerblock').html(htmltextforpointhistory);
+        
+        
+      });
+    
+  });
+  
+</script>
+
+<style>
+
+.redeemedcoupon_mainblock, .pointhistorylist_mainblock {
+  background-color: #EFEFEF;
+    padding: 20px;
+}
+  .redeemedorderlist_mainblock {
+    padding: 20px;
+}
+.redeemedorderlist_listblock, .pointhistorylist_listblock {
+    border: 1px solid #D8D8D8;
+    padding: 10px 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    background: #EFEFEF;
+    border-radius: 8px;
+    box-shadow: 0px 0px 3px 1px #e4e5e7;
+}
+
+.redeemedlistcoupon_listblock, .redeemedorderlist_listblock, .pointhistorylist_listblock {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.customflexblock {
+    width: 50%;margin-bottom: 10px;
+}
+  @media(max-width: 450px){
+    .customflexblock {
+    width: 100%;
+}
+  }
+  .redeemedlistcoupon_listblock, .pointhistorylist_listblock {
+    border: 1px solid #D8D8D8;
+    padding: 10px 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    background:#fff;
+    border-radius: 8px;
+    box-shadow: 0px 0px 3px 1px #e4e5e7;
+}
+  
+  .loyaltypointdetailblock {
+    background-color: #EFEFEF;
+    padding: 20px;
+  }
+  .loyaltypointdetailblock p, .customflexblock p {
+     margin: 0px;
+    font-weight: 500;
+  }
+ .heading_for_redeemblocks {
+        margin-bottom: 10px;
+    font-size: 24px;    text-transform: capitalize;
+  }
+ .loyaltypointdetailblock span, .customflexblock span {    
+    font-weight: 400;
+  }
+
+  .redeempointsection {
+    padding: 20px;
+}
+  .redeempointinputsection {
+    margin: 15px 0px;
+}
+.redeempointbuttonsection {
+    margin: 15px 0px;
+}
+  .account__block-list-h{
+    color: #000;
+font-family: Roboto;
+font-size: 16px;
+font-style: normal;
+font-weight: 400;
+line-height: normal;
+  }
+  .account__address-details-btn a, .returnsubmitbtn, .redeemsubmitbtn {
+    color: #FFF;
+font-family: Roboto;
+font-size: 12px;
+font-style: normal;
+font-weight: 500;
+    background: #25306E;
+    padding:12px 20px;
+line-height: normal;
+text-transform: uppercase;
+  }
+  .order-date-ct {
+    display: flex;
+    align-items: center;
+}
+
+    .order-box-new {
+    border: 1px solid #D8D8D8;
+    padding: 10px 10px;
+        cursor: pointer;
+    margin-bottom: 15px;
+}
+.account__address-details-cts{
+   justify-content: space-between;
+    display: flex;
+  margin-top:10px;
+}
+.order-cts-date-id {
+    justify-content: space-between;
+    display: flex;
+}
+.order-cts-price{
+  display: flex;
+ margin: 18px 0px;
+ justify-content: space-between;
+}
+  .order-price-n p{
+    color: #909090;
+    font-family: Roboto;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    text-transform: capitalize;
+    margin: 3px 0px 0px;
+}
+.order-box-new span.heading {
+  
+    margin-right: 12px;
+
+    color: #000;
+    font-family: Roboto;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+    text-transform: capitalize;
+}
+  .order-id-ct{
+     display: flex;
+  }
+  .grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+      padding: 20px 0px;
+}
+
+.grid-item {
+    text-align: center;
+    padding: 20px;
+    border: 1px solid #c5b9b9;
+    height: 300px;
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.icon img {
+  width: 50px;
+  height: 50px;
+}
+
+h3 {
+  margin-top: 10px;
+}
+
+/* a {
+  text-decoration: none;
+  color: #333;
+} */
+  .container-order {
+  display: flex;
+  max-width: 1400px;
+  margin: auto;
+}
+
+.customer_info .name_{
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+}
+.customer_info .email_{
+    margin: 0;
+}
+  
+.sidebar {
+  flex: 1;
+  background-color: #EFEFEF;
+  padding: 20px;
+      margin: 20px 0px;
+
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  margin: 0px 40px;
+  font-weight:400;
+
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0px 40px;
+}
+
+
+.sidebar li {
+  margin-bottom: 10px;
+  border-bottom: 1px solid grey;
+  padding: 30px 0px;
+
+}
+
+.sidebar a {
+  text-decoration: none;
+  color: #333;
+  text-transform:uppercase;
+}
+
+.main-content {
+  flex: 4;
+  padding: 20px;
+}
+.main-ss {
+    background-color:#EFEFEF;
+  padding: 20px;
+}
+  .block_link span img, .arp{
+    display:none;
+  }
+
+
+  
+
+ @media only screen and (max-width:749px){
+  .container-order .sidebar{
+       display: none !important;
+  }
+   .account__address-details-btn {
+    margin-bottom: 12px;
+}
+.order-price-c  .link--animated  {
+       color: #000;
+    font-size: 16px;
+    font-weight: 600;
+   }
+   .account--order-list .container{
+     padding-left:10px !important;
+     padding-right:10px !important;
+   }
+   .order-box-new span.heading {
+    margin-right: 5px;
+    color: #000;
+    font-family: Roboto;
+   letter-spacing: 0px;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+    text-transform: capitalize;
+}
+   .order-id-ct {
+    display: flex;
+    align-items: center;
+}
+   .account__address-details-cts {
+    justify-content: space-between;
+    display: flex;
+    margin-top: 0px;
+    flex-direction: column;
+}
+   .account__address-details {
+    margin-bottom: 16px;
+}
+   .order-cts-date-id {
+    justify-content: space-between;
+    display: flex;
+    flex-direction: column;
+}
+.order-id-ct {
+    display: flex;
+    align-items: center;
+    order: 2;
+    margin-top: 8px;
+}
+   .account__address-details {
+    margin-top: 16px;
+}
+
+ }
+  .order-itemimages {
+    display: flex;
+    align-items: center;
+  }
+
+  @media only screen and (max-width:800px){
+    .block_link span img, .arp{
+    display:inline-grid;
+  }
+li.block_link a {
+    padding-left: 10px;
+}
+li.block_link {
+    display: flex;
+    align-items: center;
+  justify-content: space-between;
+}
+    .sidebar {
+    flex: 0;
+    background-color: white;
+    padding: 20px;
+    margin: 0;
+    order: 2;
+  }
+    .main-content {
+    flex: 0;
+    padding: 0px;
+    order: 1;
+  }
+    .container-order {
+    display: flex;
+    flex-direction: column;
+}
+    .customer_info {
+    text-align: center;
+}
+    .grid-container, .sidebar h3{display:none;}
+  }
+</style>
+
 {% schema %}
   {
     "name": "Section name",
