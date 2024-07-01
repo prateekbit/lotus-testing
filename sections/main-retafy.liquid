@@ -4,18 +4,7 @@
   }
   </style>
 <div class="container-order">
-   <div class="sidebar">
-    <h3>Profile</h3>
-    <ul>
-      {% for block in section.blocks %}
-        <li class="block_link"><span><img src="{{ block.settings.icon_url | img_url:'master' }}" /><a href="{{ block.settings.link }}">{{ block.settings.title }}</a></span><img class="arp" src="{{ section.settings.arp | img_url:"master" }}" /></li>
-      {% endfor %}  
-  
-      <li class="block_link">
-            <a href="{{ routes.account_logout_url }}" class="link-bar__link link--animated text--subdued" data-no-instant>{{ 'customer.logout.title' | t }}</a>
-          </li>
-    </ul>
-  </div>
+ 
   <div class="main-content">
     
      <div class="page-content page-content--fluid">
